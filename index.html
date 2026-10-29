@@ -1,0 +1,61 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+<title>PumpFun Paper Trader — Live</title>
+<style>
+*{box-sizing:border-box}body{background:#0d1117;color:#e6edf3;font:16px/1.45 system-ui,-apple-system,sans-serif;margin:0 auto;padding:14px;max-width:1100px}
+h1{font-size:21px;margin:0 0 6px}h2{font-size:16px;margin:22px 0 8px;color:#9da7b3}
+.sub{color:#8b949e;font-size:14px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:#8b949e}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:12px 14px;font-size:14px;color:#9da7b3}
+.card b{display:block;font-size:21px;margin-top:4px;color:#e6edf3}.card small{display:block;color:#8b949e;font-size:13px}
+.wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}table{width:100%;border-collapse:collapse;background:#161b22}
+td,th{padding:9px 10px;border-bottom:1px solid #21262d;text-align:left;font-size:15px;white-space:nowrap}th{color:#8b949e;font-weight:500;font-size:13px}td.r{white-space:normal;min-width:160px}
+.pos{color:#3fb950;font-weight:600}.neg{color:#f85149;font-weight:600}
+#openw{border:1px solid #30363d;border-radius:12px;padding:2px 12px 12px;background:#11161d}#openw td{font-size:17px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.grid{grid-template-columns:1fr}td,th{padding:8px 7px;font-size:14px}}
+.warn{background:#2a2210;border:1px solid #5a4510;padding:12px;border-radius:10px;margin-top:22px;color:#e3b341;font-size:14px}
+@keyframes fl{0%{background:#1f6feb55}100%{background:transparent}}.flash td{animation:fl 4s ease-out}
+#toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1f6feb;color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;display:none;max-width:92vw}
+</style></head><body>
+<h1>PumpFun Paper Trader — Live</h1><div class="sub" id="status"><span class="dot"></span>connexion…</div>
+<div class="cards" id="cards"></div>
+<div id="openw"><h2>Positions ouvertes</h2><div class="wrap"><table id="open"></table></div></div>
+<div class="grid"><div><h2>Derniers événements</h2><div class="wrap"><table id="events"></table></div></div><div><h2>Raisons de skip</h2><div class="wrap"><table id="skips"></table></div></div></div>
+<h2>Trades clos</h2><div class="wrap"><table id="closed"></table></div>
+<div class="warn">Simulation uniquement, aucun vrai trade. Données approximatives : part du dev et bundles estimés par concentration des holders, comptes X non vérifiés, prix estimé à partir de la market cap. Aucune garantie.</div>
+<div id="toast"></div>
+<script>
+"use strict";
+const topic=decodeURIComponent(location.hash.slice(1)).trim();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f=(v,d=4)=>v==null?'–':Number(v).toFixed(d), cls=v=>v>0?'pos':v<0?'neg':'', sg=v=>v>0?'+':'';
+const mc=v=>v?Math.round(v).toLocaleString('fr-FR')+' $':'–';
+let last=null,lastAt=0,connected=false,seenEv=new Set(),first=true;
+function tbl(id,head,rows,flash){$(id).innerHTML='<tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr>'+(rows.length?rows.map((r,j)=>`<tr${flash&&flash[j]?' class="flash"':''}>`+r.map((c,i)=>`<td${i==r.length-1&&r.length>2?' class="r"':''}>${c}</td>`).join('')+'</tr>').join(''):`<tr><td colspan="${head.length}" class="sub">aucun</td></tr>`)}
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',6000)}
+function render(d){
+ const usd=v=>d.px?`<small>~${Math.round(v*d.px).toLocaleString('fr-FR')} $</small>`:'';
+ $('cards').innerHTML=[['Cash',f(d.cash)+' SOL'+usd(d.cash)],['Equity',f(d.eq)+' SOL'+usd(d.eq)],['PnL total',`<span class="${cls(d.pnl)}">${sg(d.pnl)}${f(d.pnl)} SOL</span>`],['PnL réalisé',`<span class="${cls(d.real)}">${sg(d.real)}${f(d.real)} SOL</span>`],['Winrate',d.wr==null?'–':f(d.wr,0)+' %<small>'+d.nc+' trades clos</small>'],['Positions',d.open.length+' / '+d.maxp+'<small>'+d.scan+' tokens scannés</small>']].map(([k,v])=>`<div class="card">${k}<b>${v}</b></div>`).join('');
+ tbl('open',['Token','MC entrée','MC actuelle','PnL','Âge'],d.open.map(p=>[esc(p.tk),mc(p.e),mc(p.c),`<span class="${cls(p.p)}">${sg(p.p)}${f(p.p,1)} %</span>`,p.a+' min']));
+ const fl=d.ev.map(e=>{const k=e.ts+e.ty+e.tk;const n=!seenEv.has(k);seenEv.add(k);return n&&!first});
+ fl.forEach((n,i)=>{if(n){const e=d.ev[i];toast(`${e.ty} ${e.tk}${e.pnl!=null?' '+sg(e.pnl)+f(e.pnl,1)+' %':''}`)}});
+ tbl('events',['Heure','Type','Token','PnL','Raison'],d.ev.map(e=>[e.ts,e.ty,esc(e.tk),e.pnl!=null?`<span class="${cls(e.pnl)}">${sg(e.pnl)}${f(e.pnl,1)} %</span>`:'–',esc(e.r)]),fl);
+ tbl('skips',['Raison','Nombre'],d.sk.map(([k,v])=>[esc(k),v]));
+ tbl('closed',['Heure','Token','MC entrée','MC sortie','PnL SOL','PnL %','Sortie'],d.closed.map(t=>[t.ts,esc(t.tk),mc(t.e),mc(t.x),`<span class="${cls(t.s)}">${sg(t.s)}${f(t.s)}</span>`,`<span class="${cls(t.p)}">${sg(t.p)}${f(t.p,1)} %</span>`,esc(t.r)]));
+ first=false;
+}
+function handle(m){if(!m||m.event!=='message'||m.title!=='snapshot')return;try{const d=JSON.parse(m.message);if(d.v!==1)return;if(last&&d.ts<last.ts)return;last=d;lastAt=m.time*1000;render(d)}catch(e){}}
+function status(){const age=lastAt?Math.round((Date.now()-lastAt)/1000):null;const ok=connected&&age!=null&&age<90;
+ $('status').innerHTML=`<span class="dot" style="background:${ok?'#3fb950':connected?'#d29922':'#f85149'}"></span>${connected?'connecté':'déconnecté, reconnexion…'}${age!=null?` · dernière mise à jour il y a ${age} s (${esc(last.ts.slice(11))})`:''}${age!=null&&age>90?' · le watcher ne publie plus ?':''}`}
+async function start(){
+ if(!/^[A-Za-z0-9_-]{8,64}$/.test(topic)){$('status').textContent='Ajoute le topic secret après # dans l’URL (ex. index.html#pfpt-…).';return}
+ const base='https://ntfy.sh/'+encodeURIComponent(topic);
+ try{const t=await (await fetch(base+'/json?poll=1&since=10m',{cache:'no-store'})).text();t.split('\n').filter(Boolean).forEach(l=>{try{handle(JSON.parse(l))}catch(e){}})}catch(e){}
+ first=false;
+ const es=new EventSource(base+'/sse');
+ es.onopen=()=>{connected=true;status()};es.onerror=()=>{connected=false;status()};
+ es.onmessage=e=>{try{handle(JSON.parse(e.data))}catch(x){}};
+ setInterval(status,1000);status();
+}
+start();
+</script></body></html>
