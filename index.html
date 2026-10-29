@@ -1,60 +1,82 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0b0f17">
 <title>PumpFun Paper Trader — Live</title>
 <style>
-*{box-sizing:border-box}body{background:#0d1117;color:#e6edf3;font:16px/1.45 system-ui,-apple-system,sans-serif;margin:0 auto;padding:14px;max-width:1100px}
-h1{font-size:21px;margin:0 0 6px}h2{font-size:16px;margin:22px 0 8px;color:#9da7b3}
-.sub{color:#8b949e;font-size:14px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:#8b949e}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:12px 14px;font-size:14px;color:#9da7b3}
-.card b{display:block;font-size:21px;margin-top:4px;color:#e6edf3}.card small{display:block;color:#8b949e;font-size:13px}
-.wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}table{width:100%;border-collapse:collapse;background:#161b22}
-td,th{padding:9px 10px;border-bottom:1px solid #21262d;text-align:left;font-size:15px;white-space:nowrap}th{color:#8b949e;font-weight:500;font-size:13px}td.r{white-space:normal;min-width:160px}
-.pos{color:#3fb950;font-weight:600}.neg{color:#f85149;font-weight:600}
-#openw{border:1px solid #30363d;border-radius:12px;padding:2px 12px 12px;background:#11161d}#openw td{font-size:17px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.grid{grid-template-columns:1fr}td,th{padding:8px 7px;font-size:14px}}
-.warn{background:#2a2210;border:1px solid #5a4510;padding:12px;border-radius:10px;margin-top:22px;color:#e3b341;font-size:14px}
-@keyframes fl{0%{background:#1f6feb55}100%{background:transparent}}.flash td{animation:fl 4s ease-out}
-#toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1f6feb;color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;display:none;max-width:92vw}
-</style></head><body>
-<h1>PumpFun Paper Trader — Live</h1><div class="sub" id="status"><span class="dot"></span>connexion…</div>
-<div class="cards" id="cards"></div>
-<div id="openw"><h2>Positions ouvertes</h2><div class="wrap"><table id="open"></table></div></div>
-<div class="grid"><div><h2>Derniers événements</h2><div class="wrap"><table id="events"></table></div></div><div><h2>Raisons de skip</h2><div class="wrap"><table id="skips"></table></div></div></div>
-<h2>Trades clos</h2><div class="wrap"><table id="closed"></table></div>
-<div class="warn">Simulation uniquement, aucun vrai trade. Données approximatives : part du dev et bundles estimés par concentration des holders, comptes X non vérifiés, prix estimé à partir de la market cap. Aucune garantie.</div>
-<div id="toast"></div>
+:root{--bg:#0b0f17;--pan:#121826;--pan2:#0f1420;--bd:#232c3d;--tx:#eef2f8;--mu:#8a96ab;--g:#34d399;--r:#f87171;--c:#60a5fa;--s:#f472b6}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 600px at 10% -10%,#1a2440 0,transparent 60%),radial-gradient(900px 500px at 100% 0,#2a1533 0,transparent 55%),var(--bg);color:var(--tx);font:17px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+h1{font-size:22px;margin:0;letter-spacing:.2px}h1 span{color:var(--mu);font-weight:500;font-size:15px;margin-left:6px}
+.st{font-size:14px;color:var(--mu);display:flex;align-items:center;gap:7px}.dot{width:10px;height:10px;border-radius:50%;background:var(--mu);box-shadow:0 0 0 4px #ffffff10}
+.vs{margin:14px 0;background:var(--pan);border:1px solid var(--bd);border-radius:16px;padding:14px}
+.vs h2{margin:0 0 10px;font-size:14px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.vrow{display:grid;grid-template-columns:110px 1fr 1fr;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--bd);font-size:16px}
+.vrow:first-of-type{border-top:0}.vrow .k{color:var(--mu);font-size:14px}.vrow .v{font-weight:650;display:flex;align-items:center;gap:6px}
+.win:after{content:"★";color:#fbbf24;font-size:13px}
+.leg{display:flex;gap:14px;font-size:13px;color:var(--mu);margin-bottom:4px;padding-left:118px}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.bar{height:8px;border-radius:6px;background:#ffffff10;overflow:hidden;margin-top:10px;display:flex}.bar b{display:block;height:100%}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:860px){.cols{grid-template-columns:1fr}.leg{padding-left:0}.vrow{grid-template-columns:90px 1fr 1fr}}
+.sec{background:linear-gradient(180deg,var(--pan),var(--pan2));border:1px solid var(--bd);border-radius:18px;padding:16px;border-top:4px solid var(--ac)}
+.sec.c{--ac:var(--c)}.sec.s{--ac:var(--s)}
+.sh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.sh h3{margin:0;font-size:20px}.sh h3 em{font-style:normal;color:var(--ac)}.tag{font-size:13px;color:var(--mu)}
+.kp{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
+.k1{background:#ffffff06;border:1px solid var(--bd);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--mu)}
+.k1 b{display:block;color:var(--tx);font-size:22px;margin-top:2px;font-variant-numeric:tabular-nums}.k1 small{color:var(--mu);font-size:13px}
+h4{margin:16px 0 8px;font-size:14px;color:var(--mu);text-transform:uppercase;letter-spacing:.7px}
+.list{display:flex;flex-direction:column;gap:8px}
+.it{display:grid;grid-template-columns:1fr auto;gap:2px 10px;background:#ffffff05;border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.it .n{font-weight:650;font-size:17px}.it .p{font-weight:750;font-size:18px;text-align:right;font-variant-numeric:tabular-nums}.it .d{color:var(--mu);font-size:13px}.it .d2{color:var(--mu);font-size:13px;text-align:right}
+.pos{color:var(--g)}.neg{color:var(--r)}.empty{color:var(--mu);font-size:14px;padding:6px 2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:13px;background:#ffffff08;border:1px solid var(--bd);border-radius:999px;padding:4px 10px;color:var(--mu)}.chip b{color:var(--tx)}
+.warn{margin-top:18px;background:#2a2210aa;border:1px solid #5a4510;padding:12px 14px;border-radius:12px;color:#f3c969;font-size:14px}
+@keyframes fl{0%{box-shadow:0 0 0 2px var(--ac)}100%{box-shadow:none}}.flash{animation:fl 3s ease-out}
+#toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1f2a44;border:1px solid var(--bd);color:#fff;padding:12px 18px;border-radius:12px;font-weight:650;display:none;max-width:92vw;box-shadow:0 10px 30px #0008}
+</style></head><body><div class="wrap">
+<header><h1>PumpFun Paper Trader<span>Live · simulation</span></h1><div class="st" id="status"><span class="dot"></span>connexion…</div></header>
+<section class="vs"><h2>Face à face</h2><div class="leg"><span><i style="background:var(--c)"></i>Classique</span><span><i style="background:var(--s)"></i>Snipe</span></div><div id="vs"></div><div class="bar" id="bar"></div></section>
+<div class="cols"><section class="sec c" id="C"></section><section class="sec s" id="S"></section></div>
+<div class="warn">Simulation uniquement : aucun wallet, aucune clé, aucune vraie transaction. Données approximatives (dev et bundles estimés via la concentration des holders, prix dérivé de la market cap, X non vérifié). En snipe, je vois les tokens avec quelques secondes de retard : le prix d'entrée simulé est plus favorable que la réalité. Aucune garantie.</div>
+<div id="toast"></div></div>
 <script>
 "use strict";
-const topic=decodeURIComponent(location.hash.slice(1)).trim();
-const $=id=>document.getElementById(id);
+const topic=decodeURIComponent(location.hash.slice(1)).trim(),$=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const f=(v,d=4)=>v==null?'–':Number(v).toFixed(d), cls=v=>v>0?'pos':v<0?'neg':'', sg=v=>v>0?'+':'';
+const f=(v,d=3)=>v==null?'–':Number(v).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}),cls=v=>v>0?'pos':v<0?'neg':'',sg=v=>v>0?'+':'';
 const mc=v=>v?Math.round(v).toLocaleString('fr-FR')+' $':'–';
-let last=null,lastAt=0,connected=false,seenEv=new Set(),first=true;
-function tbl(id,head,rows,flash){$(id).innerHTML='<tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr>'+(rows.length?rows.map((r,j)=>`<tr${flash&&flash[j]?' class="flash"':''}>`+r.map((c,i)=>`<td${i==r.length-1&&r.length>2?' class="r"':''}>${c}</td>`).join('')+'</tr>').join(''):`<tr><td colspan="${head.length}" class="sub">aucun</td></tr>`)}
+let last=null,lastAt=0,connected=false,seen=new Set(),first=true;
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',6000)}
+function sec(id,title,sub,d,px){
+ if(!d){$(id).innerHTML=`<div class="sh"><h3>${title}</h3></div><div class="empty">Pas encore de données.</div>`;return}
+ const usd=v=>px?`<small>~${Math.round(v*px).toLocaleString('fr-FR')} $</small>`:'';
+ const k=(a,b)=>`<div class="k1">${a}<b>${b}</b></div>`;
+ const op=d.open.length?d.open.map(p=>`<div class="it"><div class="n">${esc(p.tk)}</div><div class="p ${cls(p.p)}">${sg(p.p)}${f(p.p,1)} %</div><div class="d">MC ${mc(p.e)} → ${mc(p.c)}</div><div class="d2">${p.a} min</div></div>`).join(''):'<div class="empty">Aucune position ouverte.</div>';
+ const cl=d.closed.length?d.closed.slice(0,6).map(t=>`<div class="it"><div class="n">${esc(t.tk)}</div><div class="p ${cls(t.p)}">${sg(t.p)}${f(t.p,1)} %</div><div class="d">${esc(t.r)}</div><div class="d2">${esc(t.ts)} · ${sg(t.s)}${f(t.s,4)} SOL</div></div>`).join(''):'<div class="empty">Aucun trade clos.</div>';
+ const sk=(d.sk||[]).map(([r,n])=>`<span class="chip">${esc(r)} <b>${n}</b></span>`).join('')||'<span class="empty">–</span>';
+ $(id).innerHTML=`<div class="sh"><h3><em>●</em> ${title}</h3><span class="tag">${sub}</span></div>
+ <div class="kp">${k('Cash',f(d.cash)+' SOL'+usd(d.cash))}${k('Equity',f(d.eq)+' SOL'+usd(d.eq))}${k('PnL total',`<span class="${cls(d.pnl)}">${sg(d.pnl)}${f(d.pnl,4)} SOL</span>`)}${k('Winrate',(d.wr==null?'–':f(d.wr,0)+' %')+`<small> ${d.nc} clos</small>`)}${k('Positions',d.open.length+(d.maxp?' / '+d.maxp:'<small> sans limite</small>'))}${k('Tokens vus',d.scan)}</div>
+ <h4>Positions ouvertes</h4><div class="list">${op}</div><h4>Derniers trades clos</h4><div class="list">${cl}</div><h4>Raisons de skip</h4><div class="chips">${sk}</div>`;
+}
+function vs(a,b){
+ const rows=[['Equity',x=>x.eq,v=>f(v)+' SOL'],['PnL',x=>x.pnl,v=>`<span class="${cls(v)}">${sg(v)}${f(v,4)}</span>`],['Winrate',x=>x.wr,v=>v==null?'–':f(v,0)+' %'],['Trades',x=>x.nc,v=>v],['Ouvertes',x=>x.open.length,v=>v]];
+ $('vs').innerHTML=rows.map(([n,g,fm],i)=>{const va=a?g(a):null,vb=b?g(b):null;const cmp=i<3&&va!=null&&vb!=null&&va!==vb;return `<div class="vrow"><div class="k">${n}</div><div class="v ${cmp&&va>vb?'win':''}">${a?fm(va):'–'}</div><div class="v ${cmp&&vb>va?'win':''}">${b?fm(vb):'–'}</div></div>`}).join('');
+ const ea=a?a.eq:0,eb=b?b.eq:0,t=ea+eb||1;$('bar').innerHTML=`<b style="width:${ea/t*100}%;background:var(--c)"></b><b style="width:${eb/t*100}%;background:var(--s)"></b>`;
+}
 function render(d){
- const usd=v=>d.px?`<small>~${Math.round(v*d.px).toLocaleString('fr-FR')} $</small>`:'';
- $('cards').innerHTML=[['Cash',f(d.cash)+' SOL'+usd(d.cash)],['Equity',f(d.eq)+' SOL'+usd(d.eq)],['PnL total',`<span class="${cls(d.pnl)}">${sg(d.pnl)}${f(d.pnl)} SOL</span>`],['PnL réalisé',`<span class="${cls(d.real)}">${sg(d.real)}${f(d.real)} SOL</span>`],['Winrate',d.wr==null?'–':f(d.wr,0)+' %<small>'+d.nc+' trades clos</small>'],['Positions',d.open.length+' / '+d.maxp+'<small>'+d.scan+' tokens scannés</small>']].map(([k,v])=>`<div class="card">${k}<b>${v}</b></div>`).join('');
- tbl('open',['Token','MC entrée','MC actuelle','PnL','Âge'],d.open.map(p=>[esc(p.tk),mc(p.e),mc(p.c),`<span class="${cls(p.p)}">${sg(p.p)}${f(p.p,1)} %</span>`,p.a+' min']));
- const fl=d.ev.map(e=>{const k=e.ts+e.ty+e.tk;const n=!seenEv.has(k);seenEv.add(k);return n&&!first});
- fl.forEach((n,i)=>{if(n){const e=d.ev[i];toast(`${e.ty} ${e.tk}${e.pnl!=null?' '+sg(e.pnl)+f(e.pnl,1)+' %':''}`)}});
- tbl('events',['Heure','Type','Token','PnL','Raison'],d.ev.map(e=>[e.ts,e.ty,esc(e.tk),e.pnl!=null?`<span class="${cls(e.pnl)}">${sg(e.pnl)}${f(e.pnl,1)} %</span>`:'–',esc(e.r)]),fl);
- tbl('skips',['Raison','Nombre'],d.sk.map(([k,v])=>[esc(k),v]));
- tbl('closed',['Heure','Token','MC entrée','MC sortie','PnL SOL','PnL %','Sortie'],d.closed.map(t=>[t.ts,esc(t.tk),mc(t.e),mc(t.x),`<span class="${cls(t.s)}">${sg(t.s)}${f(t.s)}</span>`,`<span class="${cls(t.p)}">${sg(t.p)}${f(t.p,1)} %</span>`,esc(t.r)]));
+ const C={...d,open:d.open,closed:d.closed,sk:d.sk},S=d.sn;
+ vs(C,S);
+ sec('C','Stratégie classique','scan 60 s · TP +50 % · SL −30 % · 0,1 SOL',C,d.px);
+ sec('S','Snipe','scan 5 s · &lt;60 s · TP +40 % · SL −25 % · 0,05 SOL',S,d.px);
+ (d.ev||[]).forEach(e=>{const k=e.ts+e.ty+e.tk+e.st;if(!seen.has(k)){seen.add(k);if(!first){toast(`${e.st==='S'?'Snipe':'Classique'} · ${e.ty} ${e.tk}${e.pnl!=null?' '+sg(e.pnl)+f(e.pnl,1)+' %':''}`);const el=$(e.st==='S'?'S':'C');el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}}});
  first=false;
 }
 function handle(m){if(!m||m.event!=='message'||m.title!=='snapshot')return;try{const d=JSON.parse(m.message);if(d.v!==1)return;if(last&&d.ts<last.ts)return;last=d;lastAt=m.time*1000;render(d)}catch(e){}}
-function status(){const age=lastAt?Math.round((Date.now()-lastAt)/1000):null;const ok=connected&&age!=null&&age<90;
- $('status').innerHTML=`<span class="dot" style="background:${ok?'#3fb950':connected?'#d29922':'#f85149'}"></span>${connected?'connecté':'déconnecté, reconnexion…'}${age!=null?` · dernière mise à jour il y a ${age} s (${esc(last.ts.slice(11))})`:''}${age!=null&&age>90?' · le watcher ne publie plus ?':''}`}
+function status(){const age=lastAt?Math.round((Date.now()-lastAt)/1000):null,ok=connected&&age!=null&&age<90;
+ $('status').innerHTML=`<span class="dot" style="background:${ok?'var(--g)':connected?'#fbbf24':'var(--r)'}"></span>${connected?'connecté':'reconnexion…'}${age!=null?` · maj il y a ${age} s`:''}${age!=null&&age>90?' · watcher muet ?':''}`}
 async function start(){
- if(!/^[A-Za-z0-9_-]{8,64}$/.test(topic)){$('status').textContent='Ajoute le topic secret après # dans l’URL (ex. index.html#pfpt-…).';return}
+ if(!/^[A-Za-z0-9_-]{8,64}$/.test(topic)){$('status').textContent='Ajoute le topic secret après # dans l’URL.';return}
  const base='https://ntfy.sh/'+encodeURIComponent(topic);
  try{const t=await (await fetch(base+'/json?poll=1&since=10m',{cache:'no-store'})).text();t.split('\n').filter(Boolean).forEach(l=>{try{handle(JSON.parse(l))}catch(e){}})}catch(e){}
- first=false;
- const es=new EventSource(base+'/sse');
- es.onopen=()=>{connected=true;status()};es.onerror=()=>{connected=false;status()};
- es.onmessage=e=>{try{handle(JSON.parse(e.data))}catch(x){}};
+ first=false;const es=new EventSource(base+'/sse');
+ es.onopen=()=>{connected=true;status()};es.onerror=()=>{connected=false;status()};es.onmessage=e=>{try{handle(JSON.parse(e.data))}catch(x){}};
  setInterval(status,1000);status();
 }
 start();
